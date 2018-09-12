@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 for (( i=4; i < 200; i++ )); do
     python evaluation/tile_prediction.py \

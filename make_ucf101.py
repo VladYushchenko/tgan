@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import pickle
+import glob
 from collections import defaultdict
 
 import h5py
@@ -25,18 +26,18 @@ def init_logger(filename=''):
 def main():
     logger = init_logger()
 
-    img_dir = 'ucf101/images/test'
-    dst_path = 'ucf101/64px/ucf101_test.h5'
-    dst_config = 'ucf101/64px/ucf101_test_conf.pkl'
-    dst_config_pd = 'ucf101/64px/ucf101_test_conf_pd.pkl'
+    img_dir = '/home/vlad/PycharmProjects/UCF101/test'
+    dst_path = '/home/vlad/PycharmProjects/UCF101/test64px/ucf101_test.h5'
+    dst_config = '/home/vlad/PycharmProjects/UCF101/test64px/ucf101_test_conf.pkl'
+    dst_config_pd = '/home/vlad/PycharmProjects/UCF101/test64px/ucf101_test_conf_pd.pkl'
     rows, cols = 64, 85
 
     img_path = os.path.join('dataset', img_dir)
-    images = os.listdir(img_path)
+    images = sorted(glob.glob(img_dir + '/*/*/*.jpg'))
 
     time_dict = defaultdict(int)
     for filename in images:
-        result = re.search(r'v_(?P<video>.+)_(?P<time>\d+).png', filename)
+        result = re.search(r'.+/(?P<video>.+)/image_(?P<time>\d+).jpg', filename)
         assert(result is not None)
         video = result.group('video')
         t = int(result.group('time')) + 1
@@ -49,7 +50,7 @@ def main():
     logger.info('# of frames: %i', n_frames)
 
     logger.info('Making h5file...')
-    h5file = h5py.File(os.path.join('dataset', dst_path), 'w')
+    h5file = h5py.File(dst_path, 'w')
 
     # (time, channel, rows, cols)
     shape = (n_frames, 3, rows, cols)

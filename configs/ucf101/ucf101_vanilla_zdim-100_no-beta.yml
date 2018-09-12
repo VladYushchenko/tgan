@@ -37,8 +37,8 @@ dataset:
   dataset_name: UCFDataset
   args:
     n_frames: 16
-    h5path: data/ucf101_train.h5
-    config_path: data/ucf101_train_pd.pkl
+    h5path: /home/vlad/Downloads/ucf101_train.h5
+    config_path: /home/vlad/Downloads/ucf101_train_pd.pkl
     img_size: 64
 
 updater:
