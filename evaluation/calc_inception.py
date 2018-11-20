@@ -13,7 +13,7 @@ from chainer import Variable
 from chainer import cuda
 from tqdm import tqdm
 
-sys.path.insert(0, '')
+sys.path.insert(0, '/home/vlad/PycharmProjects/MasterThesis/src')
 from loaders import Loader
 
 
@@ -21,18 +21,12 @@ def calc_inception(ys):
     N, C = ys.shape
     p_all = np.mean(ys, axis=0, keepdims=True)
     kl = np.sum(ys * np.log(ys + 1e-7) - ys * np.log(p_all + 1e-7)) / N
-    # expreimental
-    # mean_scores = ys * np.log(ys + 1e-7) - ys * np.log(p_all + 1e-7)
-    # mean_scores = mean_scores.transpose().tolist()
-    # mean_scores = [sorted(item, reverse=True)[:max_vid] for item in mean_scores]
-    # mean_scores = np.asarray(mean_scores).transpose()
-    # # mean_top_scores = np.sort(mean_scores)[:, ::-1][:, :max_vid]
-    # kl = np.sum(mean_scores) / N
     return np.exp(kl)
 
 def get_inception(c3dmodel, args):
     """Launch chainer and extract inception score"""
-    xp = chainer.cuda.cupy
+
+    # # C3D cropped mean load
     # mean = np.zeros((3, 1, 16, 128, 128))
     # loaded_mean = np.load(args.mean).astype('f')
     # print(loaded_mean[0][0][0])
@@ -42,6 +36,7 @@ def get_inception(c3dmodel, args):
     # print(loaded_mean[:, 0, 0, 0, 0])
     # mean[:, :, :, 8:120, 8:120] = loaded_mean
 
+    # C3D full mean load
     loaded_mean = np.load(args.mean).astype('f')
     loaded_mean = loaded_mean.reshape((3, 1, 16, 128, 171))[:, :, :, :, 21:21 + 128]
     print(loaded_mean[:, 0, 0, 0, 0])
@@ -66,7 +61,7 @@ def get_inception(c3dmodel, args):
         with chainer.using_config('train', False) and \
              chainer.no_backprop_mode():
             # C3D takes an image with BGR order
-            y = c3dmodel(Variable(xp.asarray(x)),
+            y = c3dmodel(Variable(chainer.cuda.cupy.asarray(x)),
                          layers=['prob'])['prob'].data.get()
             ys.append(y)
     ys = np.asarray(ys).reshape((-1, 101))
@@ -88,9 +83,9 @@ def calculate_inception_score(args):
     score = calc_inception(ys)
     print(score)
 
-    with open('{}/inception_iter-_{}.txt'.format(args.result_dir, args.interpolation), 'w') as fp:
-        print(args.result_dir,  args.calc_iter, args.mean, score, file=fp)
-        print(args.result_dir, 'score:{}'.format(score))
+    # with open('{}/inception_iter-_{}.txt'.format(args.result_dir, args.interpolation), 'w') as fp:
+    #     print(args.result_dir,  args.calc_iter, args.mean, score, file=fp)
+    #     print(args.result_dir, 'score:{}'.format(score))
     return score
 
 
@@ -110,13 +105,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--ext', default='jpg')
     parser.add_argument('--interpolation', type=str, default='INTER_CUBIC')
+    parser.add_argument('--launches', type=int, default=4)
     args = parser.parse_args()
     args.interpolation = getattr(cv, args.interpolation)
 
     scores = []
-    total_test = 1
-    #for _ in tqdm(range(total_test), total=total_test):
-    for _ in range(total_test):
+    for i in range(args.launches):
+        print('Setting seed {}'.format(i))
+        args.seed = i
         score = calculate_inception_score(args)
         scores.append(score)
 

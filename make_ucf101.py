@@ -3,7 +3,6 @@ import os
 import re
 import sys
 import pickle
-import glob
 from collections import defaultdict
 
 import h5py
@@ -26,21 +25,21 @@ def init_logger(filename=''):
 def main():
     logger = init_logger()
 
-    img_dir = '/home/vlad/PycharmProjects/UCF101/test'
-    dst_path = '/home/vlad/PycharmProjects/UCF101/test64px/ucf101_test.h5'
-    dst_config = '/home/vlad/PycharmProjects/UCF101/test64px/ucf101_test_conf.pkl'
-    dst_config_pd = '/home/vlad/PycharmProjects/UCF101/test64px/ucf101_test_conf_pd.pkl'
+    img_dir = '/home/vlad/PycharmProjects/UCF101/all_videos/all'
+    out_dir = '/home/vlad/PycharmProjects/UCF101/tgan'
+    dst_path = os.path.join(out_dir, 'ucf101_all.h5')
+    dst_config = os.path.join(out_dir, 'ucf101_all_conf.pkl')
+    dst_config_pd = os.path.join(out_dir, 'ucf101_all_conf_pd.pkl')
     rows, cols = 64, 85
 
-    img_path = os.path.join('dataset', img_dir)
-    images = sorted(glob.glob(img_dir + '/*/*/*.jpg'))
+    images = os.listdir(img_dir)
 
     time_dict = defaultdict(int)
     for filename in images:
-        result = re.search(r'.+/(?P<video>.+)/image_(?P<time>\d+).jpg', filename)
+        result = re.search(r'v_(?P<video>.+)_(?P<time>\d+).jpg', filename)
         assert(result is not None)
         video = result.group('video')
-        t = int(result.group('time')) + 1
+        t = int(result.group('time'))
         if time_dict[video] < t:
             time_dict[video] = t
 
@@ -63,7 +62,7 @@ def main():
         logger.info('Now processing %s...', video)
         for t in range(time):
             i = ts + t
-            filepath = os.path.join(img_path, 'v_{}_{}.png'.format(video, t))
+            filepath = os.path.join(img_dir, 'v_{}_{}.jpg'.format(video, t + 1))
             img = np.asarray(
                 Image.open(filepath).resize((cols, rows)),
                 dtype=np.uint8).transpose(2, 0, 1)
@@ -80,11 +79,11 @@ def main():
         })
         ts = ts + time
 
-    with open(os.path.join('dataset', dst_config), 'wb') as fp:
+    with open(dst_config, 'wb') as fp:
         pickle.dump(config, fp)
 
     config_frame = pd.DataFrame(config_pd)
-    config_frame.to_pickle(os.path.join('dataset', dst_config_pd))
+    config_frame.to_pickle(dst_config_pd)
 
     logger.info('Done.')
     return 0

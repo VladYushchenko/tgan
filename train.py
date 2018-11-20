@@ -142,6 +142,7 @@ def main():
     display_interval = (config.display_interval, 'iteration')
 
     # Snapshot
+    print('Snapshot')
     trainer.extend(
         extensions.snapshot(filename='snapshot_iter_{.updater.iteration}.npz'),
         trigger=snapshot_interval)
@@ -153,6 +154,7 @@ def main():
         vdis, 'vdis_iter_{.updater.iteration}.npz'), trigger=snapshot_interval)
 
     # Logging
+    print('Logging')
     trainer.extend(extensions.LogReport(trigger=display_interval))
     if 'vanilla' not in args.config_path:
         trainer.extend(extensions.PrintReport([
@@ -171,11 +173,13 @@ def main():
         trigger=display_interval)
 
     # Save movie
+    print('Save movie')
     trainer.extend(
         out_generated_movie(fsgen, vgen, vdis, 100, 16, config.seed, out),
         trigger=snapshot_interval)
 
     # Resume from a snapshot
+    print('Resume ..')
     if hasattr(config, 'resume'):
         chainer.serializers.load_npz(config.resume, trainer)
 
